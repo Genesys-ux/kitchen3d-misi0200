@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cast Review Sheet — Misi 02:00 WIB</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #14121d;
+      color: #f4f1fa;
+      padding: 28px;
+    }
+    .sheet {
+      max-width: 1540px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 1px solid #302a44;
+      padding-bottom: 14px;
+    }
+    .header h1 { font-size: 1.75rem; letter-spacing: -0.3px; }
+    .header p { color: #a79ec0; font-size: 0.95rem; margin-top: 4px; }
+    .badge {
+      background: linear-gradient(135deg, #22c7e5, #2b6be6);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .lineup-box {
+      background: radial-gradient(circle at 50% 45%, #f5f1e8 0%, #ded8cc 100%);
+      border-radius: 20px;
+      border: 2px solid #3a3350;
+      padding: 20px 16px 16px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    }
+    .lineup-title {
+      color: #26202f;
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .lineup-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      align-items: end;
+    }
+    .char-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .char-col canvas {
+      width: 100%;
+      max-width: 260px;
+      height: auto;
+      display: block;
+    }
+    .char-label {
+      text-align: center;
+      color: #1e1828;
+    }
+    .char-label strong {
+      display: block;
+      font-size: 1.05rem;
+      font-weight: 800;
+    }
+    .char-label span {
+      display: block;
+      font-size: 0.76rem;
+      color: #544a64;
+      margin-top: 2px;
+    }
+    .swatches {
+      display: flex;
+      gap: 5px;
+      justify-content: center;
+      margin-top: 4px;
+    }
+    .sw {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      border: 1.5px solid rgba(0,0,0,0.35);
+    }
+    .turnaround-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+    .ta-card {
+      background: #1c1828;
+      border: 1px solid #322b47;
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ta-card h3 {
+      font-size: 0.9rem;
+      color: #9beeff;
+      display: flex;
+      justify-content: space-between;
+    }
+    .ta-views {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      background: radial-gradient(circle at 50% 45%, #2b253a 0%, #161320 100%);
+      border-radius: 10px;
+      padding: 6px 4px;
+    }
+    .ta-view {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .ta-view canvas {
+      width: 100%;
+      height: auto;
+    }
+    .ta-view span {
+      font-size: 0.65rem;
+      color: #a69cba;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="header">
+      <div>
+        <h1>🍳 Cast Character Sheet — Misi 02:00 WIB</h1>
+        <p>Digenerate dengan 2.5D Character Studio (generator.html) — 5 Karakter Utama siap review &amp; export Remotion</p>
+      </div>
+      <div class="badge">5 Karakter • 360° Rig • 2-Bone IK</div>
+    </div>
+
+    <div class="lineup-box">
+      <div class="lineup-title">
+        <span>Lineup &amp; Perbandingan Proporsi Tinggi Badan (Depan 0°)</span>
+        <span>Skala relatif: Dodi 0.95× • Bimo &amp; Tono 1.00× • Raka 1.07× • Bapak 1.10×</span>
+      </div>
+      <div id="lineupGrid" class="lineup-grid"></div>
+    </div>
+
+    <div id="turnaroundGrid" class="turnaround-grid"></div>
+  </div>
+
+  <script src="character-engine.js"></script>
+  <script>
+    const { PRESETS, renderCharacterCanvas } = window.CharacterEngine;
+    const cast = [
+      { key: 'bimo',  role: 'Si Dalang / Koki Taktis',    pal: ['#B84A39', '#EAE3D8', '#363A44'] },
+      { key: 'dodi',  role: 'Teknisi Suara Parnoan',      pal: ['#213354', '#E0A82E', '#E9DFC8'] },
+      { key: 'raka',  role: 'Pengintai / Sniper Kulkas',  pal: ['#85B258', '#202228', '#B88C5C'] },
+      { key: 'tono',  role: 'Eksekutor Minyak & Telur',   pal: ['#F5CC27', '#6E462C', '#F5F1E8'] },
+      { key: 'bapak', role: 'The Final Boss',             pal: ['#EFECE4', '#4A3123', '#1F3458'] }
+    ];
+
+    const lineupGrid = document.getElementById('lineupGrid');
+    const taGrid = document.getElementById('turnaroundGrid');
+
+    const params = new URLSearchParams(window.location.search);
+    const singleKey = params.get('single');
+
+    if (singleKey && PRESETS[singleKey]) {
+      // Single character zoomed turnaround mode
+      document.body.innerHTML = '';
+      document.body.style.background = '#14121d';
+      document.body.style.padding = '24px';
+      const item = cast.find(c => c.key === singleKey) || { key: singleKey, role: '', pal: [] };
+      const cfg = PRESETS[singleKey];
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'max-width:1400px;margin:0 auto;background:radial-gradient(circle at 50% 45%, #f5f1e8 0%, #ddd6c8 100%);border-radius:22px;padding:24px;color:#1e1828;';
+      wrap.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div><h1 style="font-size:1.7rem;">${cfg.name}</h1><p style="color:#4b425a;font-size:0.9rem;">${item.role}</p></div>
+        <div style="font-size:0.85rem;font-weight:700;color:#2b6be6;">Turnaround 360° • 0° / 35° / 90° / 180°</div>
+      </div>`;
+      const row = document.createElement('div');
+      row.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:12px;';
+      [
+        { deg: 0, label: '0° Depan' },
+        { deg: 35, label: '35° Three-Quarter' },
+        { deg: 90, label: '90° Samping' },
+        { deg: 180, label: '180° Belakang' }
+      ].forEach(v => {
+        const box = document.createElement('div');
+        box.style.cssText = 'display:flex;flex-direction:column;align-items:center;';
+        const c = document.createElement('canvas');
+        c.width = 720; c.height = 1560;
+        c.style.cssText = 'width:100%;height:auto;';
+        renderCharacterCanvas(c.getContext('2d'), cfg, v.deg, 'static', 0.25, { scale: 3 });
+        const lbl = document.createElement('div');
+        lbl.style.cssText = 'font-weight:700;font-size:0.9rem;margin-top:6px;color:#2c2438;';
+        lbl.textContent = v.label;
+        box.appendChild(c); box.appendChild(lbl);
+        row.appendChild(box);
+      });
+      wrap.appendChild(row);
+      document.body.appendChild(wrap);
+    } else {
+      cast.forEach((item) => {
+        const cfg = PRESETS[item.key];
+        const col = document.createElement('div');
+        col.className = 'char-col';
+        const c = document.createElement('canvas');
+        c.width = 720; c.height = 1560;
+        renderCharacterCanvas(c.getContext('2d'), cfg, 0, 'static', 0.2, { scale: 3 });
+        const lbl = document.createElement('div');
+        lbl.className = 'char-label';
+        lbl.innerHTML = `<strong>${cfg.name}</strong><span>${item.role}</span><div class="swatches">${item.pal.map(p => `<div class="sw" style="background:${p}"></div>`).join('')}</div>`;
+        col.appendChild(c);
+        col.appendChild(lbl);
+        lineupGrid.appendChild(col);
+
+        const card = document.createElement('div');
+        card.className = 'ta-card';
+        card.innerHTML = `<h3><span>${cfg.name.split(' ')[0]}</span><span style="color:#a69cba;font-weight:500;">3/4 • 90° • 180°</span></h3>`;
+        const views = document.createElement('div');
+        views.className = 'ta-views';
+        [{ deg: 35, l: '35°' }, { deg: 90, l: '90°' }, { deg: 180, l: '180°' }].forEach(v => {
+          const vw = document.createElement('div');
+          vw.className = 'ta-view';
+          const vc = document.createElement('canvas');
+          vc.width = 480; vc.height = 1040;
+          renderCharacterCanvas(vc.getContext('2d'), cfg, v.deg, 'static', 0.2, { scale: 2 });
+          const sp = document.createElement('span');
+          sp.textContent = v.l;
+          vw.appendChild(vc); vw.appendChild(sp);
+          views.appendChild(vw);
+        });
+        card.appendChild(views);
+        taGrid.appendChild(card);
+      });
+    }
+  </script>
+</body>
+</html>

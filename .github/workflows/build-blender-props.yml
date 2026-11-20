@@ -1,0 +1,105 @@
+name: Build Blender Kitchen Props (GLB)
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_to_repo:
+        description: 'Auto-commit generated .glb files & manifest.json back to branch'
+        required: false
+        default: true
+        type: boolean
+      only_props:
+        description: 'Optional comma-separated prop IDs (leave blank to build all 19 props)'
+        required: false
+        default: ''
+        type: string
+  push:
+    paths:
+      - 'blender/**'
+      - '.github/workflows/build-blender-props.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-glb:
+    runs-on: ubuntu-latest
+    env:
+      BLENDER_VERSION: '4.2.3'
+      BLENDER_MAJOR_MINOR: '4.2'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Blender ${{ env.BLENDER_VERSION }} Linux portable
+        id: cache-blender
+        uses: actions/cache@v4
+        with:
+          path: ~/blender
+          key: blender-linux-x64-${{ env.BLENDER_VERSION }}
+
+      - name: Download & extract headless Blender ${{ env.BLENDER_VERSION }}
+        if: steps.cache-blender.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/blender
+          URL="https://download.blender.org/release/Blender${BLENDER_MAJOR_MINOR}/blender-${BLENDER_VERSION}-linux-x64.tar.xz"
+          echo "Downloading $URL"
+          curl -fSL "$URL" -o /tmp/blender.tar.xz
+          tar -xf /tmp/blender.tar.xz --strip-components=1 -C ~/blender
+          rm -f /tmp/blender.tar.xz
+
+      - name: Install minimal headless X11/GL runtime libs
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libxi6 libxrender1 libxfixes3 libxkbcommon0 libsm6 libgl1 libglu1-mesa
+
+      - name: Generate all Blender kitchen props (.glb PBR)
+        run: |
+          EXTRA_ARGS=""
+          if [ -n "${{ github.event.inputs.only_props }}" ]; then
+            EXTRA_ARGS="--only ${{ github.event.inputs.only_props }}"
+          fi
+          ~/blender/blender --background --factory-startup \
+            --python blender/build_all.py -- \
+            --out-dir character-studio/models $EXTRA_ARGS
+
+      - name: Verify generated GLB files & manifest.json
+        run: |
+          python3 - <<'EOF'
+          import json, os, sys
+          mdir = 'character-studio/models'
+          mpath = os.path.join(mdir, 'manifest.json')
+          assert os.path.exists(mpath), 'manifest.json missing!'
+          data = json.load(open(mpath, encoding='utf-8'))
+          models = data.get('models', [])
+          assert len(models) > 0, 'No models listed in manifest.json!'
+          for m in models:
+              p = os.path.join(mdir, m['file'])
+              assert os.path.exists(p), f'Missing GLB: {p}'
+              with open(p, 'rb') as f:
+                  magic = f.read(4)
+              assert magic == b'glTF', f'Invalid GLB header in {p}: {magic!r}'
+              assert os.path.getsize(p) > 512, f'GLB too small: {p}'
+          print(f'Verified {len(models)} valid GLB models successfully!')
+          EOF
+
+      - name: Upload GLB models artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: blender-kitchen-props-glb
+          path: character-studio/models/
+          retention-days: 30
+
+      - name: Commit generated GLB models back to repository
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.commit_to_repo }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add character-studio/models/*.glb character-studio/models/manifest.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "build(blender): regenerate 3D kitchen PBR props (.glb)"
+            git push
+          fi
